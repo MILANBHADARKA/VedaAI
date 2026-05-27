@@ -9,6 +9,7 @@ import {
   type GenerationJobData,
   type GenerationJobResult,
 } from './queue/queue'
+import { publishProgress } from './ws/publish'
 
 async function start() {
   await connectDb()
@@ -38,6 +39,12 @@ async function start() {
       Job.findByIdAndUpdate(jobId, { status: 'failed', error: err.message }),
       Assignment.findByIdAndUpdate(assignmentId, { status: 'failed' }),
     ])
+    await publishProgress({
+      jobId,
+      status: 'failed',
+      progress: 0,
+      error: err.message,
+    })
   })
 
   console.log(`[worker] ready on queue "${GENERATION_QUEUE}"`)

@@ -6,6 +6,7 @@ import type { Difficulty, QuestionType } from '../lib/types'
 import { Assignment } from '../models/assignment'
 import { Job } from '../models/job'
 import { Result } from '../models/result'
+import { publishProgress } from '../ws/publish'
 import type { GenerationJobData, GenerationJobResult } from './queue'
 
 const DIFF_CYCLE: Difficulty[] = ['easy', 'moderate', 'challenging']
@@ -90,6 +91,11 @@ async function generatePayload(assignmentId: string): Promise<LlmPaper> {
   })
 }
 
+async function advance(jobId: string, progress: number) {
+  await Job.findByIdAndUpdate(jobId, { progress })
+  await publishProgress({ jobId, status: 'processing', progress })
+}
+
 export async function processGeneration(
   queueJob: QueueJob<GenerationJobData, GenerationJobResult>,
 ): Promise<GenerationJobResult> {
@@ -101,10 +107,11 @@ export async function processGeneration(
     queueJobId: String(queueJob.id),
   })
   await queueJob.updateProgress(5)
+  await publishProgress({ jobId, status: 'processing', progress: 5 })
 
   const payload = await generatePayload(assignmentId)
   await queueJob.updateProgress(70)
-  await Job.findByIdAndUpdate(jobId, { progress: 70 })
+  await advance(jobId, 70)
 
   const existing = await Result.findOne({ assignmentId })
   const result = existing
@@ -120,6 +127,12 @@ export async function processGeneration(
   await Job.findByIdAndUpdate(jobId, { status: 'completed', progress: 100 })
   await Assignment.findByIdAndUpdate(assignmentId, { status: 'ready' })
   await queueJob.updateProgress(100)
+  await publishProgress({
+    jobId,
+    status: 'completed',
+    progress: 100,
+    resultId: String(result._id),
+  })
 
   return { resultId: String(result._id) }
 }

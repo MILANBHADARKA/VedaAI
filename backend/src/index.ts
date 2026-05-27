@@ -6,6 +6,7 @@ import { errorHandler, notFoundHandler } from './lib/error'
 import assignmentsRouter from './routes/assignments'
 import jobsRouter from './routes/jobs'
 import resultsRouter from './routes/results'
+import { startWebSocket } from './ws/server'
 
 const app = express()
 
@@ -28,10 +29,12 @@ async function start() {
   const server = app.listen(env.port, () => {
     console.log(`[api] listening on http://localhost:${env.port}`)
   })
+  const wss = startWebSocket(env.wsPort)
 
   const shutdown = async (signal: string) => {
     console.log(`[api] ${signal} received, shutting down`)
     server.close()
+    wss.close()
     await disconnectDb()
     process.exit(0)
   }
