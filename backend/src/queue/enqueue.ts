@@ -1,9 +1,12 @@
-type EnqueueInput = {
-  assignmentId: string
-  jobId: string
-}
+import { getGenerationQueue, type GenerationJobData } from './queue'
 
-export async function enqueueGeneration(input: EnqueueInput): Promise<string> {
-  console.log('[queue] (stub) would enqueue generation', input)
-  return input.jobId
+export async function enqueueGeneration(input: GenerationJobData): Promise<string> {
+  const queue = getGenerationQueue()
+  if (!queue) {
+    console.warn('[queue] no redis — generation skipped', input)
+    return input.jobId
+  }
+  const queueJob = await queue.add('generate', input, { jobId: input.jobId })
+  console.log('[queue] enqueued', queueJob.id)
+  return String(queueJob.id)
 }
