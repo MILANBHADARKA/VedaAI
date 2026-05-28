@@ -41,7 +41,7 @@ export default function GenerationOverlay({
       <div className="bg-surface rounded-3xl p-8 w-full max-w-md text-center shadow-popover">
         {failed ? (
           <>
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-hard-bg flex items-center justify-center">
+            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-challenging-bg flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M12 8v5M12 16h.01"

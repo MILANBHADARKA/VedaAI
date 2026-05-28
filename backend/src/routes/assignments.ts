@@ -92,6 +92,20 @@ router.get(
   }),
 )
 
+router.get(
+  '/:id/job',
+  asyncHandler(async (req, res) => {
+    if (!isValidObjectId(req.params.id)) {
+      throw new HttpError(400, 'Invalid id')
+    }
+    const job = await Job.findOne({ assignmentId: req.params.id }).sort({
+      createdAt: -1,
+    })
+    if (!job) throw new HttpError(404, 'No job for assignment')
+    res.json(job.toJSON())
+  }),
+)
+
 router.delete(
   '/:id',
   asyncHandler(async (req, res) => {

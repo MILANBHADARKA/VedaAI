@@ -1,7 +1,9 @@
-import { Schema, model, type InferSchemaType } from 'mongoose'
+import { Schema, model } from 'mongoose'
 import {
   ASSIGNMENT_STATUS,
   QUESTION_TYPES,
+  type AssignmentStatus,
+  type QuestionType,
 } from '../lib/types'
 
 const fileSchema = new Schema(
@@ -44,10 +46,10 @@ const assignmentSchema = new Schema(
     timestamps: true,
     toJSON: {
       versionKey: false,
+      virtuals: true,
       transform: (_doc, ret) => {
-        ret.id = String(ret._id)
-        delete ret._id
-        return ret
+        const r = ret as Record<string, unknown>
+        delete r._id
       },
     },
   },
@@ -55,5 +57,25 @@ const assignmentSchema = new Schema(
 
 assignmentSchema.index({ createdAt: -1 })
 
-export type AssignmentDoc = InferSchemaType<typeof assignmentSchema>
-export const Assignment = model('Assignment', assignmentSchema)
+export type AssignmentFile = {
+  url: string
+  publicId: string
+  mimeType: string
+  originalName: string
+  sizeBytes: number
+}
+
+export type AssignmentDoc = {
+  title: string
+  dueDate: Date
+  questionTypes: { type: QuestionType; count: number; marks: number }[]
+  additionalInstructions: string
+  file: AssignmentFile | null
+  totalQuestions: number
+  totalMarks: number
+  status: AssignmentStatus
+  createdAt: Date
+  updatedAt: Date
+}
+
+export const Assignment = model<AssignmentDoc>('Assignment', assignmentSchema)

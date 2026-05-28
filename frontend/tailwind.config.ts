@@ -27,7 +27,7 @@ const config: Config = {
         danger: '#E04545',
         easy: { bg: '#E6F7EC', fg: '#1F8A4C' },
         moderate: { bg: '#FFF1DB', fg: '#B5651A' },
-        hard: { bg: '#FDE4E4', fg: '#B42424' },
+        challenging: { bg: '#FDE4E4', fg: '#B42424' },
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],

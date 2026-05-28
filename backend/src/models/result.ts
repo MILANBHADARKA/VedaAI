@@ -1,5 +1,5 @@
-import { Schema, model, type InferSchemaType } from 'mongoose'
-import { DIFFICULTIES } from '../lib/types'
+import { Schema, model, type Types } from 'mongoose'
+import { DIFFICULTIES, type Difficulty } from '../lib/types'
 
 const questionSchema = new Schema(
   {
@@ -51,14 +51,45 @@ const resultSchema = new Schema(
     timestamps: true,
     toJSON: {
       versionKey: false,
+      virtuals: true,
       transform: (_doc, ret) => {
-        ret.id = String(ret._id)
-        delete ret._id
-        return ret
+        const r = ret as Record<string, unknown>
+        delete r._id
       },
     },
   },
 )
 
-export type ResultDoc = InferSchemaType<typeof resultSchema>
-export const Result = model('Result', resultSchema)
+export type ResultQuestion = {
+  number: number
+  text: string
+  difficulty: Difficulty
+  marks: number
+  options?: string[]
+  answer: string
+}
+
+export type ResultSection = {
+  id: string
+  title: string
+  instruction: string
+  questions: ResultQuestion[]
+}
+
+export type ResultDoc = {
+  assignmentId: Types.ObjectId
+  jobId: Types.ObjectId
+  header: {
+    schoolName: string
+    subject: string
+    className: string
+    timeAllowedMinutes: number
+    maxMarks: number
+    generalInstructions: string[]
+  }
+  sections: ResultSection[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+export const Result = model<ResultDoc>('Result', resultSchema)

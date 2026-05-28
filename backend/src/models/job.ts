@@ -1,5 +1,5 @@
-import { Schema, model, type InferSchemaType } from 'mongoose'
-import { JOB_STATUS } from '../lib/types'
+import { Schema, model, type Types } from 'mongoose'
+import { JOB_STATUS, type JobStatus } from '../lib/types'
 
 const jobSchema = new Schema(
   {
@@ -18,14 +18,23 @@ const jobSchema = new Schema(
     timestamps: true,
     toJSON: {
       versionKey: false,
+      virtuals: true,
       transform: (_doc, ret) => {
-        ret.id = String(ret._id)
-        delete ret._id
-        return ret
+        const r = ret as Record<string, unknown>
+        delete r._id
       },
     },
   },
 )
 
-export type JobDoc = InferSchemaType<typeof jobSchema>
-export const Job = model('Job', jobSchema)
+export type JobDoc = {
+  assignmentId: Types.ObjectId
+  status: JobStatus
+  progress: number
+  error: string | null
+  queueJobId: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export const Job = model<JobDoc>('Job', jobSchema)

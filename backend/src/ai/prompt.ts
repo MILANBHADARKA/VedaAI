@@ -48,7 +48,7 @@ Return a JSON object with this exact shape:
 
 Rules:
 1. Output JSON only. No markdown fences, no commentary, no preamble.
-2. Create one section per question type provided, lettered A, B, C... in the order given.
+2. Create one section per question type provided, lettered A, B, C... in the order given. Set "id" to just the letter ("A") and "title" to the descriptive category name (e.g. "Short Answer Questions", "Multiple Choice Questions") — do NOT put the word "Section" in the title.
 3. Question "number" is globally sequential across all sections, starting at 1.
 4. For "multiple_choice", "options" is an array of exactly 4 plausible choices and "answer" must exactly match one of them.
 5. For every other type, "options" must be null and "answer" must be a complete model answer suitable for an answer key.
