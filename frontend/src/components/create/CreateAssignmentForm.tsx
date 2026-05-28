@@ -2,11 +2,15 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { api } from '@/lib/api'
+import type { Assignment, Job } from '@/lib/types'
+import { useJobProgress } from '@/hooks/useJobProgress'
 import { useCreateAssignmentStore } from '@/store/createAssignment'
 import AdditionalInfo from './AdditionalInfo'
 import DueDateInput from './DueDateInput'
 import FileDropzone from './FileDropzone'
+import GenerationOverlay from './GenerationOverlay'
 import QuestionTypeRow from './QuestionTypeRow'
 import StepperHeader from './StepperHeader'
 
@@ -20,6 +24,7 @@ export default function CreateAssignmentForm() {
   const {
     dueDate,
     rows,
+    file,
     additionalInstructions,
     fileUploading,
     setDueDate,
@@ -27,10 +32,16 @@ export default function CreateAssignmentForm() {
     removeRow,
     updateRow,
     setAdditionalInstructions,
+    reset,
   } = useCreateAssignmentStore()
 
   const [errors, setErrors] = useState<Errors>({})
-  const [submitting, setSubmitting] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [jobId, setJobId] = useState<string | null>(null)
+  const [assignmentId, setAssignmentId] = useState<string | null>(null)
+  const navigatedRef = useRef(false)
+
+  const event = useJobProgress(jobId)
 
   const { totalQuestions, totalMarks } = useMemo(() => {
     let q = 0
@@ -57,20 +68,53 @@ export default function CreateAssignmentForm() {
     return Object.keys(e).length === 0
   }
 
+  useEffect(() => {
+    if (event?.status === 'completed' && assignmentId && !navigatedRef.current) {
+      navigatedRef.current = true
+      reset()
+      router.push(`/assignments/${assignmentId}`)
+    }
+  }, [event, assignmentId, reset, router])
+
   async function handleNext() {
     if (!validate()) return
-    setSubmitting(true)
-    console.log('would submit', {
-      dueDate,
-      rows,
-      additionalInstructions,
-      totalQuestions,
-      totalMarks,
-    })
-    setSubmitting(false)
+    setCreating(true)
+    try {
+      const res = await api<{ assignment: Assignment; job: Job }>(
+        '/assignments',
+        {
+          method: 'POST',
+          json: {
+            dueDate,
+            questionTypes: rows.map((r) => ({
+              type: r.type,
+              count: r.count,
+              marks: r.marks,
+            })),
+            additionalInstructions,
+            file,
+          },
+        },
+      )
+      setAssignmentId(res.assignment.id)
+      setJobId(res.job.id)
+    } catch (err) {
+      setCreating(false)
+      window.alert(
+        err instanceof Error ? err.message : 'Failed to create assignment',
+      )
+    }
   }
 
-  const canSubmit = !fileUploading && !submitting
+  function dismissOverlay() {
+    setJobId(null)
+    setAssignmentId(null)
+    setCreating(false)
+    navigatedRef.current = false
+  }
+
+  const overlayOpen = creating || jobId !== null
+  const canSubmit = !fileUploading && !overlayOpen
 
   return (
     <div className="max-w-3xl mx-auto pb-24">
@@ -193,6 +237,18 @@ export default function CreateAssignmentForm() {
           </svg>
         </button>
       </div>
+
+      {overlayOpen && (
+        <GenerationOverlay
+          event={event}
+          creating={creating}
+          onRetry={() => {
+            dismissOverlay()
+            void handleNext()
+          }}
+          onClose={dismissOverlay}
+        />
+      )}
     </div>
   )
 }
