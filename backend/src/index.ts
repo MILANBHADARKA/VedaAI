@@ -35,7 +35,7 @@ async function start() {
   const server = app.listen(env.port, () => {
     console.log(`[api] listening on http://localhost:${env.port}`)
   })
-  const wss = startWebSocket(env.wsPort)
+  const wss = startWebSocket(server)
 
   const shutdown = async (signal: string) => {
     console.log(`[api] ${signal} received, shutting down`)

@@ -1,4 +1,4 @@
-import type { IncomingMessage } from 'node:http'
+import type { IncomingMessage, Server } from 'node:http'
 import { WebSocketServer, type WebSocket } from 'ws'
 import { createRedis } from '../config/redis'
 import { Job } from '../models/job'
@@ -6,8 +6,8 @@ import { PROGRESS_CHANNEL, type JobProgressEvent } from './publish'
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed'])
 
-export function startWebSocket(port: number): WebSocketServer {
-  const wss = new WebSocketServer({ port })
+export function startWebSocket(server: Server): WebSocketServer {
+  const wss = new WebSocketServer({ server })
   const subscribers = new Map<string, Set<WebSocket>>()
 
   const sub = createRedis()
@@ -77,6 +77,6 @@ export function startWebSocket(port: number): WebSocketServer {
     }
   })
 
-  console.log(`[ws] listening on :${port}`)
+  console.log('[ws] attached to http server')
   return wss
 }
