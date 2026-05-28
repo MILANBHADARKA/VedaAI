@@ -10,6 +10,7 @@ import {
   type CreateAssignmentInput,
 } from '../lib/validation'
 import { enqueueGeneration } from '../queue/enqueue'
+import { renderPaperPdf } from '../pdf/render'
 
 const router = Router()
 
@@ -103,6 +104,53 @@ router.get(
     })
     if (!job) throw new HttpError(404, 'No job for assignment')
     res.json(job.toJSON())
+  }),
+)
+
+router.get(
+  '/:id/pdf',
+  asyncHandler(async (req, res) => {
+    if (!isValidObjectId(req.params.id)) {
+      throw new HttpError(400, 'Invalid id')
+    }
+    const result = await Result.findOne({ assignmentId: req.params.id })
+    if (!result) throw new HttpError(404, 'Result not ready')
+    const pdf = await renderPaperPdf({
+      header: result.header,
+      sections: result.sections,
+    })
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="question-paper.pdf"',
+    )
+    res.send(pdf)
+  }),
+)
+
+router.post(
+  '/:id/regenerate',
+  asyncHandler(async (req, res) => {
+    if (!isValidObjectId(req.params.id)) {
+      throw new HttpError(400, 'Invalid id')
+    }
+    const assignment = await Assignment.findById(req.params.id)
+    if (!assignment) throw new HttpError(404, 'Assignment not found')
+
+    await Assignment.updateOne(
+      { _id: assignment._id },
+      { status: 'generating' },
+    )
+    const job = await Job.create({
+      assignmentId: assignment._id,
+      status: 'queued',
+    })
+    await enqueueGeneration({
+      assignmentId: String(assignment._id),
+      jobId: String(job._id),
+    })
+
+    res.status(201).json({ job: job.toJSON() })
   }),
 )
 

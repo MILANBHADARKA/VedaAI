@@ -7,7 +7,7 @@ import { SECTIONS } from '@/lib/nav'
 
 export default function Sidebar() {
   return (
-    <aside className="w-[260px] h-screen bg-surface rounded-r-[28px] flex flex-col shrink-0">
+    <aside className="w-[260px] h-screen bg-surface rounded-r-[28px] flex flex-col shrink-0 print:hidden">
       <div className="px-5 pt-6 pb-4 flex items-center gap-2">
         <img src="/icons/logo.png" alt="" width={28} height={28} />
         <span className="text-lg font-semibold text-neutral-900">VedaAI</span>

@@ -1,10 +1,14 @@
 'use client'
 
+import { apiBase } from '@/lib/api'
 import type { ResultHeader } from '@/lib/types'
+import Spinner from '@/components/ui/Spinner'
 
 type Props = {
+  assignmentId: string
   header: ResultHeader
-  onDownload: () => void
+  onRegenerate: () => void
+  regenerating: boolean
 }
 
 function introLine(header: ResultHeader): string {
@@ -17,26 +21,57 @@ function introLine(header: ResultHeader): string {
     : 'Here is your customized question paper.'
 }
 
-export default function AiBanner({ header, onDownload }: Props) {
+export default function AiBanner({
+  assignmentId,
+  header,
+  onRegenerate,
+  regenerating,
+}: Props) {
+  const pdfUrl = `${apiBase}/assignments/${assignmentId}/pdf`
+
   return (
     <div className="bg-banner-dark text-white rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 print:hidden">
       <p className="flex-1 text-sm leading-relaxed">{introLine(header)}</p>
-      <button
-        type="button"
-        onClick={onDownload}
-        className="shrink-0 inline-flex items-center gap-2 h-10 px-4 rounded-full bg-surface text-neutral-900 text-sm font-semibold hover:bg-neutral-100"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        Download as PDF
-      </button>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={onRegenerate}
+          disabled={regenerating}
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-white/30 text-white text-sm font-semibold hover:bg-white/10 disabled:opacity-60"
+        >
+          {regenerating ? (
+            <Spinner className="h-4 w-4" />
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M4 12a8 8 0 0 1 13.7-5.7L20 8M20 4v4h-4M20 12a8 8 0 0 1-13.7 5.7L4 16M4 20v-4h4"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+          Regenerate
+        </button>
+        <a
+          href={pdfUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-surface text-neutral-900 text-sm font-semibold hover:bg-neutral-100"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Download as PDF
+        </a>
+      </div>
     </div>
   )
 }

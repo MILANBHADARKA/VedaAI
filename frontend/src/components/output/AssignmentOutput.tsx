@@ -14,6 +14,7 @@ export default function AssignmentOutput({ id }: { id: string }) {
   const [paper, setPaper] = useState<GeneratedPaper | null>(null)
   const [job, setJob] = useState<Job | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [regenerating, setRegenerating] = useState(false)
   const reloadedRef = useRef(false)
 
   const load = useCallback(async () => {
@@ -43,6 +44,26 @@ export default function AssignmentOutput({ id }: { id: string }) {
     }
   }, [event, load])
 
+  const regenerate = useCallback(async () => {
+    setRegenerating(true)
+    try {
+      const { job: nextJob } = await api<{ job: Job }>(
+        `/assignments/${id}/regenerate`,
+        { method: 'POST' },
+      )
+      reloadedRef.current = false
+      setPaper(null)
+      setJob(nextJob)
+      setAssignment((a) => (a ? { ...a, status: 'generating' } : a))
+    } catch (err) {
+      window.alert(
+        err instanceof Error ? err.message : 'Failed to regenerate',
+      )
+    } finally {
+      setRegenerating(false)
+    }
+  }, [id])
+
   if (error) {
     return (
       <div className="max-w-md mx-auto py-24 text-center">
@@ -63,12 +84,25 @@ export default function AssignmentOutput({ id }: { id: string }) {
   }
 
   if (assignment.status === 'failed' || event?.status === 'failed') {
-    return <FailedState error={event?.error} />
+    return (
+      <FailedState
+        error={event?.error}
+        onRegenerate={regenerate}
+        regenerating={regenerating}
+      />
+    )
   }
 
   if (assignment.status === 'generating' || !paper) {
     return <GeneratingState event={event} />
   }
 
-  return <PaperView paper={paper} />
+  return (
+    <PaperView
+      paper={paper}
+      assignmentId={id}
+      onRegenerate={regenerate}
+      regenerating={regenerating}
+    />
+  )
 }

@@ -11,7 +11,7 @@ export default function Topbar() {
   const meta = section ? SECTIONS[section] : null
 
   return (
-    <header className="h-16 bg-surface rounded-2xl flex items-center px-5">
+    <header className="h-16 bg-surface rounded-2xl flex items-center px-5 print:hidden">
       <button
         type="button"
         onClick={() => router.back()}
