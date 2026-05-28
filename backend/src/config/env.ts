@@ -17,6 +17,7 @@ export const env = {
   port: Number(read('PORT', '4000')),
   wsPort: Number(read('WS_PORT', '4001')),
   corsOrigin: read('CORS_ORIGIN', 'http://localhost:3000'),
+  jwtSecret: read('JWT_SECRET', 'dev-secret-change-in-production'),
   mongoUri: optional('MONGO_URI'),
   redisUrl: optional('REDIS_URL'),
   groqApiKey: optional('GROQ_API_KEY'),

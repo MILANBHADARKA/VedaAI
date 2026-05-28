@@ -1,9 +1,10 @@
 import { Router } from 'express'
 import { isValidObjectId } from 'mongoose'
-import { Assignment } from '../models/assignment'
+import { Assignment, type AssignmentDoc } from '../models/assignment'
 import { Job } from '../models/job'
 import { Result } from '../models/result'
 import { asyncHandler, HttpError } from '../lib/http'
+import { requireAuth } from '../lib/requireAuth'
 import {
   createAssignmentSchema,
   validateBody,
@@ -13,6 +14,8 @@ import { enqueueGeneration } from '../queue/enqueue'
 import { renderPaperPdf } from '../pdf/render'
 
 const router = Router()
+
+router.use(requireAuth)
 
 const totals = (input: CreateAssignmentInput) => {
   const totalQuestions = input.questionTypes.reduce(
@@ -33,6 +36,15 @@ const deriveTitle = (input: CreateAssignmentInput): string => {
   return 'Untitled Assignment'
 }
 
+async function findOwned(id: string, userId: unknown) {
+  if (!isValidObjectId(id)) throw new HttpError(400, 'Invalid id')
+  const assignment = await Assignment.findById(id)
+  if (!assignment || String(assignment.userId) !== String(userId)) {
+    throw new HttpError(404, 'Assignment not found')
+  }
+  return assignment
+}
+
 router.post(
   '/',
   validateBody(createAssignmentSchema),
@@ -41,6 +53,7 @@ router.post(
     const { totalQuestions, totalMarks } = totals(input)
 
     const assignment = await Assignment.create({
+      userId: req.user!._id,
       title: deriveTitle(input),
       dueDate: input.dueDate,
       questionTypes: input.questionTypes,
@@ -73,9 +86,10 @@ router.get(
   asyncHandler(async (req, res) => {
     const limit = Math.min(Number(req.query.limit ?? 20), 100)
     const skip = Math.max(Number(req.query.skip ?? 0), 0)
+    const filter = { userId: req.user!._id }
     const [items, total] = await Promise.all([
-      Assignment.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Assignment.countDocuments(),
+      Assignment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Assignment.countDocuments(filter),
     ])
     res.json({ items: items.map((a) => a.toJSON()), total, skip, limit })
   }),
@@ -84,11 +98,7 @@ router.get(
 router.get(
   '/:id',
   asyncHandler(async (req, res) => {
-    if (!isValidObjectId(req.params.id)) {
-      throw new HttpError(400, 'Invalid id')
-    }
-    const assignment = await Assignment.findById(req.params.id)
-    if (!assignment) throw new HttpError(404, 'Assignment not found')
+    const assignment = await findOwned(req.params.id, req.user!._id)
     res.json(assignment.toJSON())
   }),
 )
@@ -96,9 +106,7 @@ router.get(
 router.get(
   '/:id/job',
   asyncHandler(async (req, res) => {
-    if (!isValidObjectId(req.params.id)) {
-      throw new HttpError(400, 'Invalid id')
-    }
+    await findOwned(req.params.id, req.user!._id)
     const job = await Job.findOne({ assignmentId: req.params.id }).sort({
       createdAt: -1,
     })
@@ -110,9 +118,7 @@ router.get(
 router.get(
   '/:id/pdf',
   asyncHandler(async (req, res) => {
-    if (!isValidObjectId(req.params.id)) {
-      throw new HttpError(400, 'Invalid id')
-    }
+    await findOwned(req.params.id, req.user!._id)
     const result = await Result.findOne({ assignmentId: req.params.id })
     if (!result) throw new HttpError(404, 'Result not ready')
     const pdf = await renderPaperPdf({
@@ -131,12 +137,7 @@ router.get(
 router.post(
   '/:id/regenerate',
   asyncHandler(async (req, res) => {
-    if (!isValidObjectId(req.params.id)) {
-      throw new HttpError(400, 'Invalid id')
-    }
-    const assignment = await Assignment.findById(req.params.id)
-    if (!assignment) throw new HttpError(404, 'Assignment not found')
-
+    const assignment = await findOwned(req.params.id, req.user!._id)
     await Assignment.updateOne(
       { _id: assignment._id },
       { status: 'generating' },
@@ -149,7 +150,6 @@ router.post(
       assignmentId: String(assignment._id),
       jobId: String(job._id),
     })
-
     res.status(201).json({ job: job.toJSON() })
   }),
 )
@@ -157,12 +157,9 @@ router.post(
 router.delete(
   '/:id',
   asyncHandler(async (req, res) => {
-    if (!isValidObjectId(req.params.id)) {
-      throw new HttpError(400, 'Invalid id')
-    }
-    const assignment = await Assignment.findByIdAndDelete(req.params.id)
-    if (!assignment) throw new HttpError(404, 'Assignment not found')
+    const assignment = await findOwned(req.params.id, req.user!._id)
     await Promise.all([
+      Assignment.deleteOne({ _id: assignment._id }),
       Job.deleteMany({ assignmentId: assignment._id }),
       Result.deleteMany({ assignmentId: assignment._id }),
     ])

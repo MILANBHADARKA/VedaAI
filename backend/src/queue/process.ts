@@ -1,11 +1,13 @@
 import type { Job as QueueJob } from 'bullmq'
+import { extractFileText } from '../ai/extract'
 import { generatePaper } from '../ai/generate'
 import type { LlmPaper } from '../ai/schema'
 import { env } from '../config/env'
 import type { Difficulty, QuestionType } from '../lib/types'
-import { Assignment } from '../models/assignment'
+import { Assignment, type AssignmentDoc } from '../models/assignment'
 import { Job } from '../models/job'
 import { Result } from '../models/result'
+import { User } from '../models/user'
 import { publishProgress } from '../ws/publish'
 import type { GenerationJobData, GenerationJobResult } from './queue'
 
@@ -54,10 +56,11 @@ function buildStubPaper(assignment: AssignmentLike): LlmPaper {
   }
 }
 
-async function generatePayload(assignmentId: string): Promise<LlmPaper> {
-  const assignment = await Assignment.findById(assignmentId)
-  if (!assignment) throw new Error(`Assignment ${assignmentId} not found`)
-
+async function buildPaper(
+  assignment: AssignmentDoc,
+  referenceText: string | null,
+  schoolName: string | null,
+): Promise<LlmPaper> {
   const input: AssignmentLike = {
     questionTypes: assignment.questionTypes.map((row) => ({
       type: row.type as QuestionType,
@@ -88,6 +91,8 @@ async function generatePayload(assignmentId: string): Promise<LlmPaper> {
     fileHint: input.file
       ? `${input.file.originalName} (${input.file.mimeType})`
       : null,
+    referenceText,
+    schoolName,
   })
 }
 
@@ -109,7 +114,24 @@ export async function processGeneration(
   await queueJob.updateProgress(5)
   await publishProgress({ jobId, status: 'processing', progress: 5 })
 
-  const payload = await generatePayload(assignmentId)
+  const assignment = await Assignment.findById(assignmentId)
+  if (!assignment) throw new Error(`Assignment ${assignmentId} not found`)
+
+  const user = await User.findById(assignment.userId)
+  const schoolName = user?.institution?.name?.trim() || null
+
+  let referenceText: string | null = null
+  if (assignment.file) {
+    await advance(jobId, 20)
+    referenceText = await extractFileText(assignment.file).catch((err) => {
+      console.warn('[ocr] extraction failed', err)
+      return null
+    })
+    await advance(jobId, 40)
+  }
+
+  const payload = await buildPaper(assignment, referenceText, schoolName)
+  if (schoolName) payload.header.schoolName = schoolName
   await queueJob.updateProgress(70)
   await advance(jobId, 70)
 

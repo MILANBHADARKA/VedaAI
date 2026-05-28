@@ -1,22 +1,26 @@
+import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
 import { env } from './config/env'
 import { connectDb, disconnectDb } from './config/db'
 import { errorHandler, notFoundHandler } from './lib/error'
 import assignmentsRouter from './routes/assignments'
+import authRouter from './routes/auth'
 import jobsRouter from './routes/jobs'
 import resultsRouter from './routes/results'
 import { startWebSocket } from './ws/server'
 
 const app = express()
 
-app.use(cors({ origin: env.corsOrigin }))
+app.use(cors({ origin: env.corsOrigin, credentials: true }))
 app.use(express.json({ limit: '2mb' }))
+app.use(cookieParser())
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'vedaai-api' })
 })
 
+app.use('/auth', authRouter)
 app.use('/assignments', assignmentsRouter)
 app.use('/jobs', jobsRouter)
 app.use('/results', resultsRouter)

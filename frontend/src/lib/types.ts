@@ -1,3 +1,21 @@
+export type Institution = {
+  kind: 'school' | 'college'
+  name: string
+  address: string
+}
+
+export type User = {
+  id: string
+  email: string
+  username: string
+  fullName: string
+  institution: Institution
+  avatarUrl: string | null
+  onboardingComplete: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export type QuestionType =
   | 'multiple_choice'
   | 'short_answer'

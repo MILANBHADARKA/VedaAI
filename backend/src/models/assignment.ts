@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose'
+import { Schema, model, type Types } from 'mongoose'
 import {
   ASSIGNMENT_STATUS,
   QUESTION_TYPES,
@@ -28,6 +28,12 @@ const questionTypeRow = new Schema(
 
 const assignmentSchema = new Schema(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
     title: { type: String, default: 'Untitled Assignment', trim: true },
     dueDate: { type: Date, required: true },
     questionTypes: { type: [questionTypeRow], required: true },
@@ -66,6 +72,7 @@ export type AssignmentFile = {
 }
 
 export type AssignmentDoc = {
+  userId: Types.ObjectId
   title: string
   dueDate: Date
   questionTypes: { type: QuestionType; count: number; marks: number }[]

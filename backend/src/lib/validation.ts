@@ -34,6 +34,43 @@ export const createAssignmentSchema = z.object({
 
 export type CreateAssignmentInput = z.infer<typeof createAssignmentSchema>
 
+export const signupSchema = z.object({
+  email: z.string().email().max(200),
+  username: z
+    .string()
+    .trim()
+    .min(3)
+    .max(30)
+    .regex(/^[a-zA-Z0-9_]+$/, 'Letters, numbers and underscore only'),
+  password: z.string().min(8).max(100),
+})
+export type SignupInput = z.infer<typeof signupSchema>
+
+export const loginSchema = z.object({
+  identifier: z.string().trim().min(3).max(200),
+  password: z.string().min(1).max(100),
+})
+export type LoginInput = z.infer<typeof loginSchema>
+
+const institutionInput = z.object({
+  kind: z.enum(['school', 'college']),
+  name: z.string().trim().min(1).max(200),
+  address: z.string().trim().min(1).max(300),
+})
+
+export const onboardingSchema = z.object({
+  fullName: z.string().trim().min(1).max(100),
+  institution: institutionInput,
+})
+export type OnboardingInput = z.infer<typeof onboardingSchema>
+
+export const profileSchema = z.object({
+  fullName: z.string().trim().min(1).max(100).optional(),
+  institution: institutionInput.partial().optional(),
+  avatarUrl: z.string().url().nullish(),
+})
+export type ProfileInput = z.infer<typeof profileSchema>
+
 export function validateBody<T extends z.ZodTypeAny>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
     const parsed = schema.safeParse(req.body)

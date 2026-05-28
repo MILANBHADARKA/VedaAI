@@ -103,7 +103,9 @@ export default function FileDropzone() {
         <p className="text-sm text-neutral-700">
           Choose a file or drag &amp; drop it here
         </p>
-        <p className="text-xs text-neutral-500 mt-1">JPEG, PNG, upto 10MB</p>
+        <p className="text-xs text-neutral-500 mt-1">
+          JPEG, PNG, PDF, upto 10MB
+        </p>
         <input
           ref={inputRef}
           type="file"

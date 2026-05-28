@@ -3,6 +3,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import { SECTIONS, sectionForPath } from '@/lib/nav'
+import { useAuthStore } from '@/store/auth'
 
 type Props = {
   onMenuOpen: () => void
@@ -13,6 +14,7 @@ export default function MobileTopbar({ onMenuOpen }: Props) {
   const pathname = usePathname()
   const section = sectionForPath(pathname)
   const meta = section ? SECTIONS[section] : null
+  const avatar = useAuthStore((s) => s.user?.avatarUrl) || '/icons/avatar.svg'
 
   return (
     <div className="lg:hidden sticky top-0 z-10 bg-page">
@@ -31,11 +33,11 @@ export default function MobileTopbar({ onMenuOpen }: Props) {
             <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-notification" />
           </button>
           <img
-            src="/icons/avatar.svg"
+            src={avatar}
             alt=""
             width={28}
             height={28}
-            className="rounded-full bg-neutral-100"
+            className="h-7 w-7 rounded-full object-cover bg-neutral-100"
           />
           <button
             type="button"

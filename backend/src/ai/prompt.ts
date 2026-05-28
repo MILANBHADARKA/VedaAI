@@ -6,6 +6,8 @@ export type PromptInput = {
   totalMarks: number
   additionalInstructions: string
   fileHint: string | null
+  referenceText: string | null
+  schoolName: string | null
 }
 
 const QUESTION_TYPE_LABEL: Record<QuestionType, string> = {
@@ -55,7 +57,7 @@ Rules:
 6. "difficulty" must be exactly one of "easy", "moderate", "challenging". Mix difficulties — don't make every question the same level.
 7. The sum of "marks" across all questions must equal the requested total marks.
 8. The total question count must equal the requested total questions.
-9. Use the teacher's additional instructions to infer subject, class level, school name, and topic. If a value isn't given, choose a sensible one.
+9. Use the teacher's additional instructions to infer subject, class level, and topic. If a value isn't given, choose a sensible one. If a school name is provided below, use it verbatim as "schoolName".
 10. Each question text should be self-contained and unambiguous.`
 
 export function buildUserPrompt(input: PromptInput): string {
@@ -66,20 +68,26 @@ export function buildUserPrompt(input: PromptInput): string {
     )
     .join('\n')
 
-  const fileLine = input.fileHint
-    ? `\nA reference file was attached by the teacher: ${input.fileHint}. Generate questions consistent with its likely subject matter.\n`
-    : ''
+  const referenceBlock = input.referenceText
+    ? `\nReference material uploaded by the teacher — base the questions primarily on this content:\n"""\n${input.referenceText}\n"""\n`
+    : input.fileHint
+      ? `\nA reference file was attached by the teacher: ${input.fileHint}. Generate questions consistent with its likely subject matter.\n`
+      : ''
 
   const instructions = input.additionalInstructions.trim() || '(none provided)'
+
+  const schoolBlock = input.schoolName
+    ? `\nSchool name (use verbatim as "schoolName"): ${input.schoolName}\n`
+    : ''
 
   return `Generate a question paper with these specifications:
 
 Total questions: ${input.totalQuestions}
 Total marks: ${input.totalMarks}
-
+${schoolBlock}
 Question types requested:
 ${breakdown}
-${fileLine}
+${referenceBlock}
 Teacher's additional instructions:
 """
 ${instructions}
