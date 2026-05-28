@@ -8,6 +8,7 @@ import assignmentsRouter from './routes/assignments'
 import authRouter from './routes/auth'
 import jobsRouter from './routes/jobs'
 import resultsRouter from './routes/results'
+import shareRouter from './routes/share'
 import { startWebSocket } from './ws/server'
 
 const app = express()
@@ -24,6 +25,7 @@ app.use('/auth', authRouter)
 app.use('/assignments', assignmentsRouter)
 app.use('/jobs', jobsRouter)
 app.use('/results', resultsRouter)
+app.use('/share', shareRouter)
 
 app.use(notFoundHandler)
 app.use(errorHandler)

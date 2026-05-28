@@ -81,7 +81,13 @@ const styles = StyleSheet.create({
 
 const optionLetter = (i: number) => String.fromCharCode(97 + i)
 
-export function PaperDocument({ paper }: { paper: PaperData }) {
+export function PaperDocument({
+  paper,
+  includeAnswers,
+}: {
+  paper: PaperData
+  includeAnswers: boolean
+}) {
   const { header, sections } = paper
   const answers = sections.flatMap((s) =>
     s.questions.map((q) => ({ number: q.number, answer: q.answer })),
@@ -168,15 +174,17 @@ export function PaperDocument({ paper }: { paper: PaperData }) {
 
         <Text style={styles.end}>End of Question Paper</Text>
 
-        <View>
-          <Text style={styles.answerTitle}>Answer Key:</Text>
-          {answers.map((a) => (
-            <View key={a.number} style={styles.answerRow}>
-              <Text style={styles.qNum}>{a.number}.</Text>
-              <Text style={styles.qBody}>{a.answer}</Text>
-            </View>
-          ))}
-        </View>
+        {includeAnswers ? (
+          <View>
+            <Text style={styles.answerTitle}>Answer Key:</Text>
+            {answers.map((a) => (
+              <View key={a.number} style={styles.answerRow}>
+                <Text style={styles.qNum}>{a.number}.</Text>
+                <Text style={styles.qBody}>{a.answer}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
       </Page>
     </Document>
   )

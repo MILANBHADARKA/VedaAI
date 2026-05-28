@@ -104,6 +104,21 @@ export type GeneratedPaper = {
   updatedAt: string
 }
 
+export type SharedQuestion = Omit<ResultQuestion, 'answer'>
+
+export type SharedSection = {
+  id: string
+  title: string
+  instruction: string
+  questions: SharedQuestion[]
+}
+
+export type SharedPaper = {
+  header: ResultHeader
+  sections: SharedSection[]
+  variant: 'student'
+}
+
 export type ListResponse<T> = {
   items: T[]
   total: number

@@ -1,8 +1,8 @@
 'use client'
 
-import { apiBase } from '@/lib/api'
 import type { ResultHeader } from '@/lib/types'
 import Spinner from '@/components/ui/Spinner'
+import ExportMenu from './ExportMenu'
 
 type Props = {
   assignmentId: string
@@ -27,8 +27,6 @@ export default function AiBanner({
   onRegenerate,
   regenerating,
 }: Props) {
-  const pdfUrl = `${apiBase}/assignments/${assignmentId}/pdf`
-
   return (
     <div className="bg-banner-dark text-white rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 print:hidden">
       <p className="flex-1 text-sm leading-relaxed">{introLine(header)}</p>
@@ -54,23 +52,7 @@ export default function AiBanner({
           )}
           Regenerate
         </button>
-        <a
-          href={pdfUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-surface text-neutral-900 text-sm font-semibold hover:bg-neutral-100"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          Download as PDF
-        </a>
+        <ExportMenu assignmentId={assignmentId} />
       </div>
     </div>
   )

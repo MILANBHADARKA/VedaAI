@@ -22,6 +22,7 @@ export const env = {
   redisUrl: optional('REDIS_URL'),
   groqApiKey: optional('GROQ_API_KEY'),
   groqModel: read('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+  groqFallbackModel: read('GROQ_FALLBACK_MODEL', 'llama-3.1-8b-instant'),
   cloudinary: {
     cloudName: optional('CLOUDINARY_CLOUD_NAME'),
     apiKey: optional('CLOUDINARY_API_KEY'),

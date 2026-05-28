@@ -12,6 +12,10 @@ import Topbar from './Topbar'
 
 const AUTH_ONLY_ROUTES = ['/login', '/signup']
 const ONBOARDING_ROUTE = '/onboarding'
+const PUBLIC_PREFIXES = ['/share/']
+
+const isPublicRoute = (pathname: string) =>
+  PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
 
 type View = 'loader' | 'bare' | 'app'
 
@@ -20,6 +24,7 @@ function decideView(
   onboardingComplete: boolean,
   pathname: string,
 ): View {
+  if (isPublicRoute(pathname)) return 'bare'
   if (status === 'loading') return 'loader'
 
   if (AUTH_ONLY_ROUTES.includes(pathname)) {
@@ -46,7 +51,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [status, fetchMe])
 
   useEffect(() => {
-    if (status === 'loading') return
+    if (status === 'loading' || isPublicRoute(pathname)) return
     const onAuthRoute = AUTH_ONLY_ROUTES.includes(pathname)
     const onOnboarding = pathname === ONBOARDING_ROUTE
 

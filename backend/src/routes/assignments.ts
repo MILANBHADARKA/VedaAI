@@ -12,10 +12,16 @@ import {
 } from '../lib/validation'
 import { enqueueGeneration } from '../queue/enqueue'
 import { renderPaperPdf } from '../pdf/render'
+import { renderPaperDocx } from '../docx/render'
+import { signShareToken } from '../lib/share'
 
 const router = Router()
 
 router.use(requireAuth)
+
+type ExportVariant = 'student' | 'teacher'
+const readVariant = (raw: unknown): ExportVariant =>
+  raw === 'student' ? 'student' : 'teacher'
 
 const totals = (input: CreateAssignmentInput) => {
   const totalQuestions = input.questionTypes.reduce(
@@ -43,6 +49,13 @@ async function findOwned(id: string, userId: unknown) {
     throw new HttpError(404, 'Assignment not found')
   }
   return assignment
+}
+
+async function ownedResult(id: string, userId: unknown) {
+  await findOwned(id, userId)
+  const result = await Result.findOne({ assignmentId: id })
+  if (!result) throw new HttpError(404, 'Result not ready')
+  return result
 }
 
 router.post(
@@ -118,19 +131,48 @@ router.get(
 router.get(
   '/:id/pdf',
   asyncHandler(async (req, res) => {
-    await findOwned(req.params.id, req.user!._id)
-    const result = await Result.findOne({ assignmentId: req.params.id })
-    if (!result) throw new HttpError(404, 'Result not ready')
-    const pdf = await renderPaperPdf({
-      header: result.header,
-      sections: result.sections,
-    })
+    const result = await ownedResult(req.params.id, req.user!._id)
+    const variant = readVariant(req.query.variant)
+    const pdf = await renderPaperPdf(
+      { header: result.header, sections: result.sections },
+      variant === 'teacher',
+    )
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader(
       'Content-Disposition',
-      'attachment; filename="question-paper.pdf"',
+      `attachment; filename="question-paper-${variant}.pdf"`,
     )
     res.send(pdf)
+  }),
+)
+
+router.get(
+  '/:id/docx',
+  asyncHandler(async (req, res) => {
+    const result = await ownedResult(req.params.id, req.user!._id)
+    const variant = readVariant(req.query.variant)
+    const docx = await renderPaperDocx(
+      { header: result.header, sections: result.sections },
+      variant === 'teacher',
+    )
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    )
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="question-paper-${variant}.docx"`,
+    )
+    res.send(docx)
+  }),
+)
+
+router.post(
+  '/:id/share',
+  asyncHandler(async (req, res) => {
+    await ownedResult(req.params.id, req.user!._id)
+    const token = signShareToken(req.params.id)
+    res.status(201).json({ token, expiresInDays: 7 })
   }),
 )
 
