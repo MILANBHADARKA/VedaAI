@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 import type { Job, JobProgressEvent } from '@/lib/types'
 
 const WS_URL =
-  process.env.NEXT_PUBLIC_WS_URL?.replace(/\/$/, '') ?? 'ws://localhost:4001'
+  process.env.NEXT_PUBLIC_WS_URL?.replace(/\/$/, '') ?? 'ws://localhost:4000'
 
 export function useJobProgress(jobId: string | null): JobProgressEvent | null {
   const [event, setEvent] = useState<JobProgressEvent | null>(null)

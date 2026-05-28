@@ -14,8 +14,8 @@ function optional(key: string): string | undefined {
 }
 
 export const env = {
+  isProduction: process.env.NODE_ENV === 'production',
   port: Number(read('PORT', '4000')),
-  wsPort: Number(read('WS_PORT', '4001')),
   corsOrigin: read('CORS_ORIGIN', 'http://localhost:3000'),
   jwtSecret: read('JWT_SECRET', 'dev-secret-change-in-production'),
   mongoUri: optional('MONGO_URI'),

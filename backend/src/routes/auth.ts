@@ -1,4 +1,5 @@
-import { Router, type Response } from 'express'
+import { Router, type CookieOptions, type Response } from 'express'
+import { env } from '../config/env'
 import { hashPassword, signToken, verifyPassword } from '../lib/auth'
 import { asyncHandler, HttpError } from '../lib/http'
 import { AUTH_COOKIE, requireAuth } from '../lib/requireAuth'
@@ -17,13 +18,19 @@ import { User } from '../models/user'
 
 const router = Router()
 
+function cookieOptions(): CookieOptions {
+  return {
+    httpOnly: true,
+    sameSite: env.isProduction ? 'none' : 'lax',
+    secure: env.isProduction,
+    path: '/',
+  }
+}
+
 function setAuthCookie(res: Response, token: string): void {
   res.cookie(AUTH_COOKIE, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: false,
+    ...cookieOptions(),
     maxAge: 7 * 24 * 60 * 60 * 1000,
-    path: '/',
   })
 }
 
@@ -65,7 +72,7 @@ router.post(
 )
 
 router.post('/logout', (_req, res) => {
-  res.clearCookie(AUTH_COOKIE, { path: '/' })
+  res.clearCookie(AUTH_COOKIE, cookieOptions())
   res.status(204).end()
 })
 
